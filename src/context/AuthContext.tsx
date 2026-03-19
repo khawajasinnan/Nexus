@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, UserRole, AuthContextType } from '../types';
+import { User, UserRole, AuthContextType, Entrepreneur, Investor } from '../types';
 import { users } from '../data/users';
 import toast from 'react-hot-toast';
 
@@ -9,14 +9,41 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Local storage keys
 const USER_STORAGE_KEY = 'business_nexus_user';
 const RESET_TOKEN_KEY = 'business_nexus_reset_token';
+const REGISTERED_USERS_KEY = 'business_nexus_registered_users';
+
+// Load any previously registered users from localStorage and merge into the users array
+const loadRegisteredUsers = () => {
+  try {
+    const stored = localStorage.getItem(REGISTERED_USERS_KEY);
+    if (stored) {
+      const registeredUsers = JSON.parse(stored) as (Entrepreneur | Investor)[];
+      for (const ru of registeredUsers) {
+        if (!users.some(u => u.id === ru.id)) {
+          users.push(ru);
+        }
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+};
+
+// Save registered (non-seed) users to localStorage
+const saveRegisteredUsers = () => {
+  // Seed users have IDs like e1-e4, i1-i3; registered users have higher numbers
+  const seedIds = new Set(['e1', 'e2', 'e3', 'e4', 'i1', 'i2', 'i3']);
+  const registered = users.filter(u => !seedIds.has(u.id));
+  localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(registered));
+};
 
 // Auth Provider Component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for stored user on initial load
+  // Check for stored user on initial load & restore registered users
   useEffect(() => {
+    loadRegisteredUsers();
     const storedUser = localStorage.getItem(USER_STORAGE_KEY);
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -27,14 +54,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Mock login function - in a real app, this would make an API call
   const login = async (email: string, password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
-    
+
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Find user with matching email and role
       const foundUser = users.find(u => u.email === email && u.role === role);
-      
+
       if (foundUser) {
         setUser(foundUser);
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(foundUser));
@@ -53,31 +80,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Mock register function - in a real app, this would make an API call
   const register = async (name: string, email: string, password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
-    
+
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Check if email already exists
       if (users.some(u => u.email === email)) {
         throw new Error('Email already in use');
       }
-      
-      // Create new user
-      const newUser: User = {
+
+      // Create new user with role-specific fields
+      let newUser: Entrepreneur | Investor;
+      const baseFields = {
         id: `${role[0]}${users.length + 1}`,
         name,
         email,
-        role,
         avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
         bio: '',
         isOnline: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
-      
-      // Add user to mock data
+
+      if (role === 'entrepreneur') {
+        newUser = {
+          ...baseFields,
+          role: 'entrepreneur' as const,
+          startupName: '',
+          pitchSummary: '',
+          fundingNeeded: '',
+          industry: '',
+          location: '',
+          foundedYear: new Date().getFullYear(),
+          teamSize: 1,
+        };
+      } else {
+        newUser = {
+          ...baseFields,
+          role: 'investor' as const,
+          investmentInterests: [],
+          investmentStage: [],
+          portfolioCompanies: [],
+          totalInvestments: 0,
+          minimumInvestment: '',
+          maximumInvestment: '',
+        };
+      }
+
+      // Add user to mock data and persist
       users.push(newUser);
-      
+      saveRegisteredUsers();
+
       setUser(newUser);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
       toast.success('Account created successfully!');
@@ -94,17 +147,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Check if user exists
       const user = users.find(u => u.email === email);
       if (!user) {
         throw new Error('No account found with this email');
       }
-      
+
       // Generate reset token (in a real app, this would be a secure token)
       const resetToken = Math.random().toString(36).substring(2, 15);
       localStorage.setItem(RESET_TOKEN_KEY, resetToken);
-      
+
       // In a real app, this would send an email
       toast.success('Password reset instructions sent to your email');
     } catch (error) {
@@ -118,13 +171,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Verify token
       const storedToken = localStorage.getItem(RESET_TOKEN_KEY);
       if (token !== storedToken) {
         throw new Error('Invalid or expired reset token');
       }
-      
+
       // In a real app, this would update the user's password in the database
       localStorage.removeItem(RESET_TOKEN_KEY);
       toast.success('Password reset successfully');
@@ -146,22 +199,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // Update user in mock data
       const userIndex = users.findIndex(u => u.id === userId);
       if (userIndex === -1) {
         throw new Error('User not found');
       }
-      
-      const updatedUser = { ...users[userIndex], ...updates };
+
+      const updatedUser = { ...users[userIndex], ...updates } as (typeof users)[number];
       users[userIndex] = updatedUser;
-      
+
       // Update current user if it's the same user
       if (user?.id === userId) {
         setUser(updatedUser);
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
       }
-      
+
       toast.success('Profile updated successfully');
     } catch (error) {
       toast.error((error as Error).message);

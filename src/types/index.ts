@@ -79,3 +79,76 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+// Calendar & Meeting Types
+
+export interface AvailabilitySlot {
+  id: string;
+  userId: string;
+  dayOfWeek: number; // 0 = Sunday, 6 = Saturday
+  startTime: string; // "HH:mm" format
+  endTime: string;   // "HH:mm" format
+  isRecurring: boolean;
+}
+
+export type MeetingRequestStatus = 'pending' | 'accepted' | 'declined';
+
+export interface MeetingRequest {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  proposedDate: string; // ISO date string
+  proposedStartTime: string; // "HH:mm"
+  proposedEndTime: string;   // "HH:mm"
+  message: string;
+  status: MeetingRequestStatus;
+  createdAt: string;
+}
+
+export type MeetingStatus = 'confirmed' | 'cancelled';
+
+export interface Meeting {
+  id: string;
+  requestId: string;
+  participants: string[]; // user IDs
+  title: string;
+  date: string;       // ISO date string
+  startTime: string;  // "HH:mm"
+  endTime: string;    // "HH:mm"
+  status: MeetingStatus;
+  notes?: string;
+}
+
+export interface MeetingContextType {
+  availabilitySlots: AvailabilitySlot[];
+  meetingRequests: MeetingRequest[];
+  meetings: Meeting[];
+  addSlot: (slot: Omit<AvailabilitySlot, 'id'>) => void;
+  updateSlot: (id: string, updates: Partial<AvailabilitySlot>) => void;
+  removeSlot: (id: string) => void;
+  sendRequest: (request: Omit<MeetingRequest, 'id' | 'status' | 'createdAt'>) => void;
+  acceptRequest: (requestId: string) => void;
+  declineRequest: (requestId: string) => void;
+  getUserMeetings: (userId: string) => Meeting[];
+  getUserRequests: (userId: string) => { incoming: MeetingRequest[]; outgoing: MeetingRequest[] };
+  getUserSlots: (userId: string) => AvailabilitySlot[];
+}
+
+// Document Chamber Types
+
+export type DocumentStatus = 'draft' | 'in_review' | 'signed';
+
+export interface DealDocument {
+  id: string;
+  name: string;
+  type: 'pdf' | 'doc' | 'contract' | 'agreement';
+  size: string;
+  status: DocumentStatus;
+  ownerId: string;
+  sharedWith: string[];
+  createdAt: string;
+  updatedAt: string;
+  signatureData?: string; // base64 signature image
+  signedBy?: string[];
+  notes?: string;
+}

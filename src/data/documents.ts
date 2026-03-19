@@ -1,0 +1,66 @@
+import { DealDocument } from '../types';
+
+export const initialDocuments: DealDocument[] = [
+    {
+        id: 'doc1',
+        name: 'Series A Term Sheet',
+        type: 'contract',
+        size: '2.4 MB',
+        status: 'in_review',
+        ownerId: 'e1',
+        sharedWith: ['i1'],
+        createdAt: '2026-02-15T09:00:00Z',
+        updatedAt: '2026-03-10T14:30:00Z',
+        notes: 'Initial term sheet for Series A funding round.',
+    },
+    {
+        id: 'doc2',
+        name: 'Investment Agreement — GreenLife',
+        type: 'agreement',
+        size: '1.8 MB',
+        status: 'signed',
+        ownerId: 'e2',
+        sharedWith: ['i2'],
+        createdAt: '2026-01-20T10:00:00Z',
+        updatedAt: '2026-02-28T16:00:00Z',
+        signedBy: ['e2', 'i2'],
+        notes: 'Finalized investment agreement for seed round.',
+    },
+    {
+        id: 'doc3',
+        name: 'NDA — TechWave & Health Ventures',
+        type: 'agreement',
+        size: '540 KB',
+        status: 'draft',
+        ownerId: 'e1',
+        sharedWith: ['i3'],
+        createdAt: '2026-03-12T11:00:00Z',
+        updatedAt: '2026-03-12T11:00:00Z',
+    },
+    {
+        id: 'doc4',
+        name: 'Due Diligence Report — UrbanFarm',
+        type: 'pdf',
+        size: '5.1 MB',
+        status: 'in_review',
+        ownerId: 'i1',
+        sharedWith: ['e4'],
+        createdAt: '2026-03-05T08:00:00Z',
+        updatedAt: '2026-03-15T09:45:00Z',
+        notes: 'Comprehensive due diligence analysis.',
+    },
+    {
+        id: 'doc5',
+        name: 'Pitch Deck — HealthPulse',
+        type: 'pdf',
+        size: '3.2 MB',
+        status: 'draft',
+        ownerId: 'e3',
+        sharedWith: [],
+        createdAt: '2026-03-18T14:00:00Z',
+        updatedAt: '2026-03-18T14:00:00Z',
+    },
+];
+
+let docIdCounter = initialDocuments.length;
+export const generateDocId = () => `doc${++docIdCounter}`;

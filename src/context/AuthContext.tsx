@@ -10,6 +10,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const USER_STORAGE_KEY = 'business_nexus_user';
 const RESET_TOKEN_KEY = 'business_nexus_reset_token';
 const REGISTERED_USERS_KEY = 'business_nexus_registered_users';
+const SESSION_BOOT_KEY = 'business_nexus_session_boot';
+
+// Generate a unique key each time the module is freshly evaluated (i.e. server restart).
+// This value stays stable during HMR partial updates but resets on full page reload
+// triggered by a dev-server restart.
+const CURRENT_BOOT_ID = import.meta.env.DEV
+  ? String(Date.now())
+  : 'production';
 
 // Load any previously registered users from localStorage and merge into the users array
 const loadRegisteredUsers = () => {
@@ -42,9 +50,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   // Check for stored user on initial load & restore registered users
+  // Also invalidate session if the server has restarted (boot ID changed)
   useEffect(() => {
     loadRegisteredUsers();
-    const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+
+    // Check if the server was restarted — if boot ID changed, clear session
+    const storedBootId = sessionStorage.getItem(SESSION_BOOT_KEY);
+    if (storedBootId !== CURRENT_BOOT_ID) {
+      // Server restarted — clear old session
+      sessionStorage.removeItem(USER_STORAGE_KEY);
+      sessionStorage.setItem(SESSION_BOOT_KEY, CURRENT_BOOT_ID);
+    }
+
+    const storedUser = sessionStorage.getItem(USER_STORAGE_KEY);
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -52,7 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Mock login function - in a real app, this would make an API call
-  const login = async (email: string, password: string, role: UserRole): Promise<void> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const login = async (email: string, _password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
 
     try {
@@ -64,7 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (foundUser) {
         setUser(foundUser);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(foundUser));
+        sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(foundUser));
+        sessionStorage.removeItem(`business_nexus_walkthrough_seen_${foundUser.id}`);
         toast.success('Successfully logged in!');
       } else {
         throw new Error('Invalid credentials or user not found');
@@ -78,7 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Mock register function - in a real app, this would make an API call
-  const register = async (name: string, email: string, password: string, role: UserRole): Promise<void> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const register = async (name: string, email: string, _password: string, role: UserRole): Promise<void> => {
     setIsLoading(true);
 
     try {
@@ -132,7 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       saveRegisteredUsers();
 
       setUser(newUser);
-      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
+      sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
+      sessionStorage.removeItem(`business_nexus_walkthrough_seen_${newUser.id}`);
       toast.success('Account created successfully!');
     } catch (error) {
       toast.error((error as Error).message);
@@ -156,7 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Generate reset token (in a real app, this would be a secure token)
       const resetToken = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem(RESET_TOKEN_KEY, resetToken);
+      sessionStorage.setItem(RESET_TOKEN_KEY, resetToken);
 
       // In a real app, this would send an email
       toast.success('Password reset instructions sent to your email');
@@ -167,19 +189,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Mock reset password function
-  const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const resetPassword = async (token: string, _newPassword: string): Promise<void> => {
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Verify token
-      const storedToken = localStorage.getItem(RESET_TOKEN_KEY);
+      const storedToken = sessionStorage.getItem(RESET_TOKEN_KEY);
       if (token !== storedToken) {
         throw new Error('Invalid or expired reset token');
       }
 
       // In a real app, this would update the user's password in the database
-      localStorage.removeItem(RESET_TOKEN_KEY);
+      sessionStorage.removeItem(RESET_TOKEN_KEY);
       toast.success('Password reset successfully');
     } catch (error) {
       toast.error((error as Error).message);
@@ -190,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Logout function
   const logout = (): void => {
     setUser(null);
-    localStorage.removeItem(USER_STORAGE_KEY);
+    sessionStorage.removeItem(USER_STORAGE_KEY);
     toast.success('Logged out successfully');
   };
 
@@ -212,7 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update current user if it's the same user
       if (user?.id === userId) {
         setUser(updatedUser);
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
+        sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
       }
 
       toast.success('Profile updated successfully');

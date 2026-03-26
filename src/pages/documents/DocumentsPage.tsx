@@ -107,6 +107,20 @@ const PreviewModal: React.FC<{
   doc: DealDocument | null;
   onClose: () => void;
 }> = ({ doc, onClose }) => {
+  const handleDownload = () => {
+    if (!doc) return;
+    const content = `Nexus Document: ${doc.name}\n\nGenerated on: ${new Date().toLocaleDateString()}\nStatus: ${doc.status.toUpperCase()}\n\nThis is a securely retrieved mock version of your document from the Nexus platform.\n\n[Document Content Follows]\n...`;
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (!doc) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -116,30 +130,35 @@ const PreviewModal: React.FC<{
             <Eye size={18} className="text-primary-600" />
             <h2 className="text-lg font-semibold text-gray-900 truncate">{doc.name}</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+          <div className="flex items-center space-x-2">
+            <button onClick={handleDownload} className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors text-sm font-medium">
+              <Download size={16} />
+              <span>Download</span>
+            </button>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"><X size={18} /></button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Mock document preview */}
-          <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 min-h-[300px] space-y-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-3 bg-primary-100 rounded-xl">
-                <FileText size={24} className="text-primary-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">{doc.name}</h3>
-                <p className="text-xs text-gray-500">{doc.type.toUpperCase()} · {doc.size}</p>
+          {/* Document preview */}
+          <div className="bg-white rounded-xl p-8 border border-gray-200 min-h-[400px] space-y-6 shadow-sm">
+            <div className="text-center border-b border-gray-100 pb-6">
+              <h3 className="text-2xl font-serif text-gray-900">{doc.name.replace(/\.[^/.]+$/, "")}</h3>
+              <p className="text-sm text-gray-500 mt-2">NEXUS SECURE DOCUMENT</p>
+            </div>
+
+            <div className="prose prose-sm max-w-none text-gray-700 space-y-4 font-serif leading-relaxed">
+              <p>This document serves as a binding agreement and official record on the Nexus Platform. The parties involved hereby acknowledge the terms detailed within this digital contract securely processed through the Nexus Document Chamber.</p>
+              <p>Section 1.0 - Confidentiality. Both the investing party and the entrepreneur agree to maintain strict confidentiality regarding the intellectual property, financial projections, and operational strategies disclosed during the negotiation phase.</p>
+              <p>Section 2.0 - Terms of Engagement. The milestones outlined in the supplementary agreement must be met prior to the disbursement of the subsequent funding tranches. Escrow mechanisms will be automatically triggered upon verification.</p>
+              <div className="bg-gray-50 p-4 rounded text-sm font-mono text-gray-600 mt-6 break-all">
+                DIGITAL_FINGERPRINT: {[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}
               </div>
             </div>
-            {/* Fake document lines */}
-            <div className="space-y-2.5">
-              {[95, 80, 90, 70, 85, 60, 92, 78, 88, 65, 75, 55].map((w, i) => (
-                <div key={i} className="h-2.5 bg-gray-200 rounded-full" style={{ width: `${w}%` }} />
-              ))}
-            </div>
+
             {doc.notes && (
-              <div className="mt-4 p-3 bg-primary-50 rounded-lg border border-primary-100">
-                <p className="text-xs font-medium text-primary-800">Notes</p>
-                <p className="text-sm text-primary-700 mt-0.5">{doc.notes}</p>
+              <div className="mt-8 p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                <p className="text-sm font-semibold text-yellow-800">Attached Notes</p>
+                <p className="text-sm text-yellow-700 mt-1">{doc.notes}</p>
               </div>
             )}
           </div>
@@ -204,15 +223,21 @@ const UploadZone: React.FC<{ onUpload: (name: string) => void }> = ({ onUpload }
       onDragLeave={() => setIsDragOver(false)}
       onDrop={handleDrop}
       onClick={() => fileRef.current?.click()}
-      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${isDragOver
-          ? 'border-primary-400 bg-primary-50'
-          : 'border-gray-300 hover:border-primary-300 hover:bg-gray-50'
+      className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300 ease-in-out transform overflow-hidden ${isDragOver
+        ? 'border-primary-500 bg-primary-100 scale-105 shadow-md animate-pulse-glow'
+        : 'border-gray-300 hover:border-primary-400 hover:bg-primary-50 hover:scale-[1.02] hover:shadow-lg'
         }`}
     >
       <input ref={fileRef} type="file" className="hidden" accept=".pdf,.doc,.docx" onChange={handleFileSelect} />
-      <Upload size={28} className={`mx-auto ${isDragOver ? 'text-primary-500' : 'text-gray-400'}`} />
-      <p className="mt-2 text-sm font-medium text-gray-700">Drop files here or click to upload</p>
+      <Upload size={32} className={`mx-auto transition-transform duration-300 ${isDragOver ? 'text-primary-600 scale-110 -translate-y-1' : 'text-primary-500 animate-float'}`} />
+      <p className="mt-3 text-sm font-semibold text-gray-800">Drop files here or click to upload</p>
       <p className="text-xs text-gray-500 mt-1">PDF, DOC, DOCX up to 10MB</p>
+
+      {isDragOver && (
+        <div className="absolute inset-0 bg-primary-500/10 backdrop-blur-[1px] flex items-center justify-center animate-fade-in">
+          <span className="bg-primary-600 text-white px-4 py-2 rounded-full font-medium shadow-xl animate-float">Drop to Upload!</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -296,15 +321,16 @@ export const DocumentsPage: React.FC = () => {
 
       {/* Status summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {filters.map(f => {
+        {filters.map((f, idx) => {
           const isActive = activeFilter === f.key;
+          const animDelay = `delay-${(idx % 4) * 100 + 100}`;
           return (
             <button
               key={f.key}
               onClick={() => setActiveFilter(f.key)}
-              className={`p-4 rounded-xl border transition-all text-left ${isActive
-                  ? 'border-primary-300 bg-primary-50 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
+              className={`animate-slide-up-fade ${animDelay} p-4 rounded-xl border transition-all duration-300 text-left hover:-translate-y-1 hover:shadow-md ${isActive
+                ? 'border-primary-300 bg-primary-50 shadow-sm'
+                : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
             >
               <p className={`text-xs font-medium ${isActive ? 'text-primary-600' : 'text-gray-500'}`}>{f.label}</p>
@@ -323,17 +349,18 @@ export const DocumentsPage: React.FC = () => {
         </CardHeader>
         <CardBody>
           {filtered.length > 0 ? (
-            <div className="space-y-2">
-              {filtered.map(doc => {
+            <div className="space-y-3">
+              {filtered.map((doc, idx) => {
                 const sc = statusConfig[doc.status];
                 const owner = findUserById(doc.ownerId);
+                const animDelay = `delay-${(idx % 4) * 100 + 100}`;
                 return (
                   <div
                     key={doc.id}
-                    className="flex items-center p-4 rounded-xl hover:bg-gray-50 transition-colors group"
+                    className={`flex items-center p-4 bg-white rounded-xl shadow-sm hover:bg-gray-50 hover:shadow-md transition-all duration-300 hover:-translate-y-1 group border border-transparent hover:border-gray-200 animate-slide-up-fade ${animDelay}`}
                   >
                     {/* Icon */}
-                    <div className={`p-2.5 rounded-xl mr-4 flex-shrink-0 ${doc.status === 'signed' ? 'bg-green-50' : doc.status === 'in_review' ? 'bg-blue-50' : 'bg-yellow-50'
+                    <div className={`p-2.5 rounded-xl mr-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110 ${doc.status === 'signed' ? 'bg-green-50' : doc.status === 'in_review' ? 'bg-blue-50' : 'bg-yellow-50'
                       }`}>
                       <File size={20} className={sc.color} />
                     </div>
@@ -341,7 +368,7 @@ export const DocumentsPage: React.FC = () => {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
-                        <h3 className="text-sm font-medium text-gray-900 truncate">{doc.name}</h3>
+                        <h3 className="text-sm font-medium text-gray-900 truncate group-hover:text-primary-600 transition-colors">{doc.name}</h3>
                         <Badge variant={sc.variant} size="sm">
                           <span className="flex items-center space-x-1">
                             {sc.icon}

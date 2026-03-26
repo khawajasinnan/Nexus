@@ -152,3 +152,37 @@ export interface DealDocument {
   signedBy?: string[];
   notes?: string;
 }
+
+// Payment Types
+
+export type TransactionType = 'deposit' | 'withdraw' | 'transfer' | 'funding';
+export type TransactionStatus = 'completed' | 'pending' | 'failed';
+
+export interface Transaction {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  currency: string;
+  fromUserId: string;
+  toUserId?: string;
+  description: string;
+  status: TransactionStatus;
+  createdAt: string;
+}
+
+export interface Wallet {
+  userId: string;
+  balance: number;
+  currency: string;
+}
+
+export interface PaymentContextType {
+  wallets: Wallet[];
+  transactions: Transaction[];
+  getWallet: (userId: string) => Wallet;
+  deposit: (userId: string, amount: number) => void;
+  withdraw: (userId: string, amount: number) => void;
+  transfer: (fromId: string, toId: string, amount: number, description: string) => void;
+  fundDeal: (investorId: string, entrepreneurId: string, amount: number, description: string) => void;
+  getUserTransactions: (userId: string) => Transaction[];
+}

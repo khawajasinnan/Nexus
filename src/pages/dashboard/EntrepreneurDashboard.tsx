@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Bell, Calendar, TrendingUp, AlertCircle, PlusCircle, Video } from 'lucide-react';
+import { Users, Bell, Calendar, AlertCircle, PlusCircle, Video, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -8,6 +8,7 @@ import { CollaborationRequestCard } from '../../components/collaboration/Collabo
 import { InvestorCard } from '../../components/investor/InvestorCard';
 import { useAuth } from '../../context/AuthContext';
 import { useMeetings } from '../../context/MeetingContext';
+import { usePayments } from '../../context/PaymentContext';
 import { CollaborationRequest } from '../../types';
 import { getRequestsForEntrepreneur } from '../../data/collaborationRequests';
 import { investors, findUserById } from '../../data/users';
@@ -15,8 +16,9 @@ import { investors, findUserById } from '../../data/users';
 export const EntrepreneurDashboard: React.FC = () => {
   const { user } = useAuth();
   const { getUserMeetings } = useMeetings();
+  const { getWallet } = usePayments();
   const [collaborationRequests, setCollaborationRequests] = useState<CollaborationRequest[]>([]);
-  const [recommendedInvestors, setRecommendedInvestors] = useState(investors.slice(0, 3));
+  const [recommendedInvestors] = useState(investors.slice(0, 3));
 
   useEffect(() => {
     if (user) {
@@ -58,7 +60,7 @@ export const EntrepreneurDashboard: React.FC = () => {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-primary-50 border border-primary-100">
+        <Card className="bg-primary-50 border border-primary-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-primary-100 rounded-full mr-4">
@@ -72,7 +74,7 @@ export const EntrepreneurDashboard: React.FC = () => {
           </CardBody>
         </Card>
 
-        <Card className="bg-secondary-50 border border-secondary-100">
+        <Card className="bg-secondary-50 border border-secondary-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-secondary-100 rounded-full mr-4">
@@ -88,7 +90,7 @@ export const EntrepreneurDashboard: React.FC = () => {
           </CardBody>
         </Card>
 
-        <Card className="bg-accent-50 border border-accent-100">
+        <Card className="bg-accent-50 border border-accent-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-accent-100 rounded-full mr-4">
@@ -102,15 +104,15 @@ export const EntrepreneurDashboard: React.FC = () => {
           </CardBody>
         </Card>
 
-        <Card className="bg-success-50 border border-success-100">
+        <Card className="bg-success-50 border border-success-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-green-100 rounded-full mr-4">
-                <TrendingUp size={20} className="text-success-700" />
+                <Wallet size={20} className="text-success-700" />
               </div>
               <div>
-                <p className="text-sm font-medium text-success-700">Profile Views</p>
-                <h3 className="text-xl font-semibold text-success-900">24</h3>
+                <p className="text-sm font-medium text-success-700">Wallet Balance</p>
+                <h3 className="text-xl font-semibold text-success-900">${getWallet(user.id).balance.toLocaleString()}</h3>
               </div>
             </div>
           </CardBody>

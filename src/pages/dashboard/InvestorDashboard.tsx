@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, PieChart, Filter, Search, PlusCircle, Calendar, Video } from 'lucide-react';
+import { Users, PieChart, Filter, Search, PlusCircle, Calendar, Video, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardBody, CardHeader } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -8,21 +8,21 @@ import { Badge } from '../../components/ui/Badge';
 import { EntrepreneurCard } from '../../components/entrepreneur/EntrepreneurCard';
 import { useAuth } from '../../context/AuthContext';
 import { useMeetings } from '../../context/MeetingContext';
-import { Entrepreneur } from '../../types';
+import { usePayments } from '../../context/PaymentContext';
+
 import { entrepreneurs, findUserById } from '../../data/users';
-import { getRequestsFromInvestor } from '../../data/collaborationRequests';
+
 
 export const InvestorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { getUserMeetings } = useMeetings();
+  const { getWallet } = usePayments();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
 
   if (!user) return null;
 
   // Get collaboration requests sent by this investor
-  const sentRequests = getRequestsFromInvestor(user.id);
-  const requestedEntrepreneurIds = sentRequests.map(req => req.entrepreneurId);
 
   // Filter entrepreneurs based on search and industry filters
   const filteredEntrepreneurs = entrepreneurs.filter(entrepreneur => {
@@ -105,8 +105,8 @@ export const InvestorDashboard: React.FC = () => {
       </div>
 
       {/* Stats summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-primary-50 border border-primary-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-primary-50 border border-primary-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-primary-100 rounded-full mr-4">
@@ -120,7 +120,7 @@ export const InvestorDashboard: React.FC = () => {
           </CardBody>
         </Card>
 
-        <Card className="bg-secondary-50 border border-secondary-100">
+        <Card className="bg-secondary-50 border border-secondary-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-secondary-100 rounded-full mr-4">
@@ -134,7 +134,7 @@ export const InvestorDashboard: React.FC = () => {
           </CardBody>
         </Card>
 
-        <Card className="bg-accent-50 border border-accent-100">
+        <Card className="bg-accent-50 border border-accent-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <CardBody>
             <div className="flex items-center">
               <div className="p-3 bg-accent-100 rounded-full mr-4">
@@ -143,6 +143,20 @@ export const InvestorDashboard: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-accent-700">Upcoming Meetings</p>
                 <h3 className="text-xl font-semibold text-accent-900">{upcomingMeetings.length}</h3>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card className="bg-success-50 border border-success-100 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+          <CardBody>
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-full mr-4">
+                <Wallet size={20} className="text-success-700" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-success-700">Wallet Balance</p>
+                <h3 className="text-xl font-semibold text-success-900">${getWallet(user.id).balance.toLocaleString()}</h3>
               </div>
             </div>
           </CardBody>

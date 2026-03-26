@@ -70,9 +70,9 @@ export const VideoCallPage: React.FC = () => {
             if (remoteVideoRef.current) {
                 remoteVideoRef.current.srcObject = stream;
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Camera error:', err);
-            setCameraError(err.message || 'Could not access camera');
+            setCameraError(err instanceof Error ? err.message : 'Could not access camera');
         }
     }, []);
 

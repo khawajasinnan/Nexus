@@ -20,13 +20,12 @@ export const CalendarPage: React.FC = () => {
     const [prefillDate, setPrefillDate] = useState('');
     const [prefillTime, setPrefillTime] = useState('');
 
-    if (!user) return null;
-
-    const myMeetings = getUserMeetings(user.id);
-    const mySlots = getUserSlots(user.id);
+    const myMeetings = user ? getUserMeetings(user.id) : [];
+    const mySlots = user ? getUserSlots(user.id) : [];
 
     // Build FullCalendar events
     const events = useMemo(() => {
+        if (!user) return [];
         const meetingEvents = myMeetings.map(m => {
             const otherParticipantId = m.participants.find(p => p !== user.id) || '';
             const otherUser = findUserById(otherParticipantId);
@@ -47,7 +46,7 @@ export const CalendarPage: React.FC = () => {
         });
 
         // Generate recurring slot events for next 4 weeks
-        const slotEvents: any[] = [];
+        const slotEvents: Record<string, unknown>[] = [];
         const today = new Date();
         for (const slot of mySlots) {
             for (let weekOffset = 0; weekOffset < 4; weekOffset++) {
@@ -76,9 +75,11 @@ export const CalendarPage: React.FC = () => {
         }
 
         return [...meetingEvents, ...slotEvents];
-    }, [myMeetings, mySlots, user.id]);
+    }, [myMeetings, mySlots, user?.id]);
 
-    const handleDateClick = (arg: any) => {
+    if (!user) return null;
+
+    const handleDateClick = (arg: { dateStr: string }) => {
         setPrefillDate(arg.dateStr.split('T')[0]);
         setPrefillTime(arg.dateStr.includes('T') ? arg.dateStr.split('T')[1]?.substring(0, 5) : '');
         setShowRequestModal(true);
